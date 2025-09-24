@@ -1,0 +1,81 @@
+api_version: jido.io/v1
+kind: Template
+metadata:
+  name: monitor-web
+  version: 0.1.0
+  display_name: "Web Monitor & Summarizer"
+  description: "Monitors URLs for changes, summarizes content via LLM, and generates reports"
+  tags: [watcher, summarizer, web, automation]
+  author: "JIDO Team"
+engine:
+  runtime: jido@>=0.4
+  concurrency: 2
+  retry:
+    max_attempts: 5
+    backoff: exponential
+compat:
+  claude_code: true
+providers:
+  llm:
+    kind: claude-code-cli
+    model: claude-3-5-sonnet
+    auth: ref://anthropic/default
+  storage:
+    kind: filesystem
+    base_dir: ./artifacts
+agent_os:
+  requires:
+    standards: true
+    product: true
+    spec: true
+commands:
+  - name: check-urls
+    schema: schemas/check-urls.json
+    steps:
+      - {hook: before_check}
+      - {run: workflows/check_urls.exs}
+      - {hook: after_check}
+  - name: summarize-changes
+    schema: schemas/summarize.json
+    steps:
+      - {hook: before_summarize}
+      - {subagent: context-fetcher}
+      - {run: workflows/summarize.exs}
+      - {hook: after_summarize}
+hooks:
+  before_check: hooks/before_check.md
+  after_check: hooks/after_check.md
+  before_summarize: hooks/before_summarize.md
+  after_summarize: hooks/after_summarize.md
+subagents:
+  - id: context-fetcher
+    kind: claude-subagent
+    name: context-fetcher
+config_schema:
+  type: object
+  required: [urls, interval_minutes]
+  properties:
+    urls:
+      type: array
+      title: "URLs to Monitor"
+      description: "List of URLs to monitor for changes"
+      items:
+        type: string
+        format: uri
+    interval_minutes:
+      type: integer
+      title: "Check Interval"
+      description: "How often to check URLs (in minutes)"
+      minimum: 1
+      default: 15
+    notify_webhook:
+      type: string
+      title: "Notification Webhook"
+      description: "Optional webhook URL for notifications"
+      nullable: true
+entrypoint:
+  workflow: workflows/monitor_web.exs
+assets:
+  - prompts/summary.md
+  - skills/fetch_page.ex
+  - skills/diff_html.ex

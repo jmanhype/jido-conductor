@@ -1,0 +1,69 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+  "productName": "JIDO Conductor",
+  "identifier": "io.jido.conductor",
+  "version": "0.1.0",
+  "build": {
+    "beforeDevCommand": "bun run dev",
+    "beforeBuildCommand": "bun run build",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "title": "JIDO Conductor",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1200,
+        "minHeight": 700
+      }
+    ],
+    "security": {
+      "csp": null
+    },
+    "macOSPrivateApi": true
+  },
+  "plugins": {
+    "shell": {
+      "open": false,
+      "scope": [
+        {
+          "name": "claude",
+          "cmd": "claude",
+          "args": [
+            { "validator": "--json|--version|--model|chat|--input", "must": false },
+            { "validator": ".*", "must": false }
+          ]
+        },
+        {
+          "name": "gh",
+          "cmd": "gh",
+          "args": [
+            { "validator": ".*", "must": false }
+          ]
+        },
+        {
+          "name": "git",
+          "cmd": "git",
+          "args": [
+            { "validator": "status|log|diff|branch|checkout", "must": false },
+            { "validator": ".*", "must": false }
+          ]
+        }
+      ]
+    },
+    "fs": {
+      "scope": [
+        "$HOME/.jido/**",
+        "$HOME/.agent-os/**",
+        "$APPDATA/**",
+        "$RESOURCE/**"
+      ]
+    },
+    "http": {
+      "scope": ["http://127.0.0.1:8745/**", "http://localhost:8745/**"]
+    }
+  }
+}
