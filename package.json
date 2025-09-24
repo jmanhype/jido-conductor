@@ -1,0 +1,16 @@
+{
+  "name": "jido-conductor-workspace",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:app\" \"npm run dev:service\"",
+    "dev:app": "cd app && bun run tauri:dev",
+    "dev:service": "cd agent_service && mix phx.server",
+    "build": "cd app && bun run tauri:build",
+    "setup": "npm run setup:app && npm run setup:service",
+    "setup:app": "cd app && bun install",
+    "setup:service": "cd agent_service && mix deps.get"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
