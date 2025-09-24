@@ -15,12 +15,13 @@ type ToasterToast = ToastProps & {
   action?: ToastActionElement
 }
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const
+// Action types as const values
+const ADD_TOAST = "ADD_TOAST" as const
+const UPDATE_TOAST = "UPDATE_TOAST" as const
+const DISMISS_TOAST = "DISMISS_TOAST" as const
+const REMOVE_TOAST = "REMOVE_TOAST" as const
+
+type ActionTypes = typeof ADD_TOAST | typeof UPDATE_TOAST | typeof DISMISS_TOAST | typeof REMOVE_TOAST
 
 let count = 0
 

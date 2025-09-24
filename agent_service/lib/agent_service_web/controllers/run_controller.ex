@@ -13,7 +13,7 @@ defmodule AgentServiceWeb.RunController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Run not found"})
-      
+
       run ->
         json(conn, run)
     end
@@ -25,7 +25,7 @@ defmodule AgentServiceWeb.RunController do
         conn
         |> put_status(:created)
         |> json(run)
-      
+
       {:error, reason} ->
         conn
         |> put_status(:bad_request)
@@ -37,7 +37,7 @@ defmodule AgentServiceWeb.RunController do
     case Runs.stop_run(id) do
       :ok ->
         json(conn, %{success: true})
-      
+
       {:error, reason} ->
         conn
         |> put_status(:bad_request)
@@ -57,10 +57,10 @@ defmodule AgentServiceWeb.RunController do
   defp stream_logs(conn, run_id) do
     # Subscribe to run logs
     Phoenix.PubSub.subscribe(AgentService.PubSub, "runs:#{run_id}")
-    
+
     # Send initial connection message
     chunk(conn, "event: connected\ndata: {\"connected\": true}\n\n")
-    
+
     # Stream logs
     receive_logs(conn, run_id)
   end
@@ -69,25 +69,27 @@ defmodule AgentServiceWeb.RunController do
     receive do
       {:log_entry, entry} ->
         data = Jason.encode!(entry)
+
         case chunk(conn, "data: #{data}\n\n") do
           {:ok, conn} ->
             receive_logs(conn, run_id)
+
           {:error, _reason} ->
             Phoenix.PubSub.unsubscribe(AgentService.PubSub, "runs:#{run_id}")
             conn
         end
-      
+
       {:run_completed, _} ->
         chunk(conn, "event: completed\ndata: {\"completed\": true}\n\n")
         Phoenix.PubSub.unsubscribe(AgentService.PubSub, "runs:#{run_id}")
         conn
-        
     after
       30_000 ->
         # Send heartbeat every 30 seconds
         case chunk(conn, ":heartbeat\n\n") do
           {:ok, conn} ->
             receive_logs(conn, run_id)
+
           {:error, _reason} ->
             Phoenix.PubSub.unsubscribe(AgentService.PubSub, "runs:#{run_id}")
             conn

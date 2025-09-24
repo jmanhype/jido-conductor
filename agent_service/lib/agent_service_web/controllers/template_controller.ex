@@ -13,7 +13,7 @@ defmodule AgentServiceWeb.TemplateController do
         conn
         |> put_status(:not_found)
         |> json(%{error: "Template not found"})
-      
+
       template ->
         json(conn, template)
     end
@@ -23,7 +23,7 @@ defmodule AgentServiceWeb.TemplateController do
     case Templates.install_template(upload) do
       {:ok, template} ->
         json(conn, template)
-      
+
       {:error, reason} ->
         conn
         |> put_status(:bad_request)

@@ -5,7 +5,6 @@ import {
   Package,
   Settings,
   PlayCircle,
-  FileText,
   Cpu,
 } from "lucide-react";
 

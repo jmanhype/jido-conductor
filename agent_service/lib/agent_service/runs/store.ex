@@ -2,7 +2,7 @@ defmodule AgentService.Runs.Store do
   @moduledoc """
   In-memory store for runs. In production, this would use Ecto/SQLite.
   """
-  
+
   use Agent
 
   def start_link(_) do
@@ -25,7 +25,7 @@ defmodule AgentService.Runs.Store do
     Agent.update(__MODULE__, fn state ->
       Map.put(state, run.id, run)
     end)
-    
+
     {:ok, run}
   end
 

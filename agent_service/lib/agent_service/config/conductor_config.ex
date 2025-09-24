@@ -36,7 +36,7 @@ defmodule AgentService.Config.ConductorConfig do
     else
       {:error, %Jason.DecodeError{} = error} ->
         {:error, "Invalid JSON in conductor.json: #{Exception.message(error)}"}
-      
+
       {:error, reason} ->
         {:error, reason}
     end
@@ -48,7 +48,7 @@ defmodule AgentService.Config.ConductorConfig do
   """
   def load_from_template(template_path) do
     conductor_path = Path.join(template_path, "conductor.json")
-    
+
     if File.exists?(conductor_path) do
       load(conductor_path)
     else
@@ -76,7 +76,7 @@ defmodule AgentService.Config.ConductorConfig do
   """
   def get_env(config, additional_env \\ %{}) do
     config_env = Map.get(config, "env", %{})
-    
+
     # Merge in order of precedence: additional > config > system
     System.get_env()
     |> Map.merge(stringify_map(config_env))
@@ -88,7 +88,7 @@ defmodule AgentService.Config.ConductorConfig do
   """
   def get_script_path(config, script_type, template_dir) when script_type in [:setup, :run, :archive] do
     script_name = Map.get(config, to_string(script_type))
-    
+
     if script_name do
       Path.join(template_dir, script_name)
     else
@@ -115,7 +115,7 @@ defmodule AgentService.Config.ConductorConfig do
   """
   def get_budget(config) do
     budget = Map.get(config, "budget", %{})
-    
+
     %{
       max_usd: get_in(budget, ["max_usd"]),
       max_tokens: get_in(budget, ["max_tokens"])
@@ -126,14 +126,14 @@ defmodule AgentService.Config.ConductorConfig do
 
   defp validate_scripts(config) do
     scripts = ["setup", "run", "archive"]
-    
-    invalid_scripts = 
+
+    invalid_scripts =
       scripts
-      |> Enum.filter(fn key -> 
+      |> Enum.filter(fn key ->
         value = Map.get(config, key)
         value != nil and not is_binary(value)
       end)
-    
+
     if Enum.empty?(invalid_scripts) do
       :ok
     else
@@ -143,14 +143,18 @@ defmodule AgentService.Config.ConductorConfig do
 
   defp validate_env(config) do
     case Map.get(config, "env") do
-      nil -> :ok
-      env when is_map(env) -> 
+      nil ->
+        :ok
+
+      env when is_map(env) ->
         if Enum.all?(env, fn {k, v} -> is_binary(k) and is_binary(v) end) do
           :ok
         else
           {:error, "env must contain only string keys and values"}
         end
-      _ -> {:error, "env must be an object"}
+
+      _ ->
+        {:error, "env must be an object"}
     end
   end
 
@@ -164,28 +168,32 @@ defmodule AgentService.Config.ConductorConfig do
 
   defp validate_budget(config) do
     case Map.get(config, "budget") do
-      nil -> :ok
+      nil ->
+        :ok
+
       budget when is_map(budget) ->
-        valid_max_usd = 
+        valid_max_usd =
           case Map.get(budget, "max_usd") do
             nil -> true
             num when is_number(num) and num > 0 -> true
             _ -> false
           end
-        
+
         valid_max_tokens =
           case Map.get(budget, "max_tokens") do
             nil -> true
             num when is_integer(num) and num > 0 -> true
             _ -> false
           end
-        
+
         if valid_max_usd and valid_max_tokens do
           :ok
         else
           {:error, "Invalid budget constraints"}
         end
-      _ -> {:error, "budget must be an object"}
+
+      _ ->
+        {:error, "budget must be an object"}
     end
   end
 

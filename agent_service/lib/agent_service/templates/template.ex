@@ -4,7 +4,7 @@ defmodule AgentService.Templates.Template do
 
   def from_manifest(manifest, id) do
     metadata = Map.get(manifest, "metadata", %{})
-    
+
     %__MODULE__{
       id: id,
       name: Map.get(metadata, "name"),

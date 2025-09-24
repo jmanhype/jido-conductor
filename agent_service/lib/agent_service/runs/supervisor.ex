@@ -19,6 +19,7 @@ defmodule AgentService.Runs.Supervisor do
     case Registry.lookup(AgentService.RunRegistry, run_id) do
       [{pid, _}] ->
         DynamicSupervisor.terminate_child(__MODULE__, pid)
+
       [] ->
         {:error, :not_found}
     end

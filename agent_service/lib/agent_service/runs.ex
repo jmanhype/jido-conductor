@@ -2,7 +2,7 @@ defmodule AgentService.Runs do
   @moduledoc """
   Context module for managing agent runs
   """
-  
+
   alias AgentService.Runs.{Supervisor, Store}
   require Logger
 
@@ -27,6 +27,7 @@ defmodule AgentService.Runs do
       :ok ->
         Store.update_run_status(id, "stopped")
         :ok
+
       error ->
         error
     end
@@ -34,7 +35,7 @@ defmodule AgentService.Runs do
 
   defp validate_run_params(params) do
     required = ["template", "config"]
-    
+
     if Enum.all?(required, &Map.has_key?(params, &1)) do
       run_params = %{
         id: UUID.uuid4(:hex),
@@ -46,7 +47,7 @@ defmodule AgentService.Runs do
         schedule: Map.get(params, "schedule"),
         secrets_ref: Map.get(params, "secretsRef")
       }
-      
+
       {:ok, run_params}
     else
       {:error, "Missing required parameters: template and config"}

@@ -27,28 +27,31 @@ defmodule AgentService.MixProject do
       # Core JIDO framework
       {:jido, "~> 1.2.0"},
       {:jido_ai, github: "agentjido/jido_ai"},
-      
+
       # Web framework
       {:phoenix, "~> 1.7.14"},
       {:bandit, "~> 1.5"},
       {:jason, "~> 1.2"},
       {:cors_plug, "~> 3.0"},
-      
+
       # Utilities
       {:elixir_uuid, "~> 1.2"},
       {:yaml_elixir, "~> 2.11"},
-      
+
       # Database
       {:ecto, "~> 3.11"},
       {:ecto_sqlite3, "~> 0.17"},
-      
+
       # Telemetry
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
-      
+
       # LiveView (for future UI)
       {:phoenix_live_view, "~> 1.0"},
-      {:plug_cowboy, "~> 2.5"}
+      {:plug_cowboy, "~> 2.5"},
+      
+      # Dev dependencies
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 end

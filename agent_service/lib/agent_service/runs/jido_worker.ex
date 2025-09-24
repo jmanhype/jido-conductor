@@ -3,22 +3,21 @@ defmodule AgentService.Runs.JidoWorker do
   Worker that manages JIDO agent execution for runs
   """
   use GenServer, restart: :temporary
-  
+
   alias AgentService.Agents.TemplateRunner
-  
+
   require Logger
 
   def start_link({run_id, config}) do
-    GenServer.start_link(__MODULE__, {run_id, config}, 
-      name: {:via, Registry, {AgentService.RunRegistry, run_id}})
+    GenServer.start_link(__MODULE__, {run_id, config}, name: {:via, Registry, {AgentService.RunRegistry, run_id}})
   end
 
   def init({run_id, config}) do
     Logger.info("Starting JIDO worker for run: #{run_id}")
-    
+
     # Start the JIDO agent for this run
     agent_id = "agent_#{run_id}"
-    
+
     agent_config = %{
       id: agent_id,
       template_id: config.template_id,
@@ -27,13 +26,13 @@ defmodule AgentService.Runs.JidoWorker do
       budget: config[:budget] || %{},
       context: build_agent_context(config)
     }
-    
+
     # Start the template runner agent
     case start_template_runner(agent_id, agent_config) do
       {:ok, agent_pid} ->
         # Monitor the agent
         Process.monitor(agent_pid)
-        
+
         state = %{
           run_id: run_id,
           agent_id: agent_id,
@@ -42,15 +41,15 @@ defmodule AgentService.Runs.JidoWorker do
           status: :running,
           started_at: DateTime.utc_now()
         }
-        
+
         # Subscribe to agent events
         Phoenix.PubSub.subscribe(AgentService.PubSub, "agent:#{agent_id}")
-        
+
         # Broadcast initial status
         broadcast_status(state)
-        
+
         {:ok, state}
-      
+
       {:error, reason} ->
         Logger.error("Failed to start JIDO agent: #{inspect(reason)}")
         {:stop, reason}
@@ -63,30 +62,28 @@ defmodule AgentService.Runs.JidoWorker do
 
   def handle_call(:stop, _from, state) do
     Logger.info("Stopping run: #{state.run_id}")
-    
+
     # Stop the JIDO agent
     if state.agent_pid && Process.alive?(state.agent_pid) do
       GenServer.stop(state.agent_pid, :normal)
     end
-    
+
     {:stop, :normal, :ok, %{state | status: :stopped}}
   end
 
   def handle_info({:DOWN, _ref, :process, pid, reason}, state) when pid == state.agent_pid do
     Logger.info("JIDO agent terminated for run #{state.run_id}: #{inspect(reason)}")
-    
-    new_status = case reason do
-      :normal -> :completed
-      _ -> :failed
-    end
-    
-    new_state = %{state | 
-      status: new_status,
-      completed_at: DateTime.utc_now()
-    }
-    
+
+    new_status =
+      case reason do
+        :normal -> :completed
+        _ -> :failed
+      end
+
+    new_state = %{state | status: new_status, completed_at: DateTime.utc_now()}
+
     broadcast_completion(new_state, reason)
-    
+
     {:stop, :normal, new_state}
   end
 
@@ -130,7 +127,7 @@ defmodule AgentService.Runs.JidoWorker do
       "runs:#{state.run_id}",
       {:log_entry, log_entry}
     )
-    
+
     {:noreply, state}
   end
 
@@ -141,7 +138,7 @@ defmodule AgentService.Runs.JidoWorker do
       "runs:#{state.run_id}",
       {:metrics, metrics}
     )
-    
+
     {:noreply, state}
   end
 
@@ -160,11 +157,12 @@ defmodule AgentService.Runs.JidoWorker do
     Phoenix.PubSub.broadcast(
       AgentService.PubSub,
       "runs:#{state.run_id}",
-      {:status_update, %{
-        run_id: state.run_id,
-        status: state.status,
-        started_at: state.started_at
-      }}
+      {:status_update,
+       %{
+         run_id: state.run_id,
+         status: state.status,
+         started_at: state.started_at
+       }}
     )
   end
 
@@ -172,12 +170,13 @@ defmodule AgentService.Runs.JidoWorker do
     Phoenix.PubSub.broadcast(
       AgentService.PubSub,
       "runs:#{state.run_id}",
-      {:run_completed, %{
-        run_id: state.run_id,
-        status: state.status,
-        reason: reason,
-        completed_at: state.completed_at
-      }}
+      {:run_completed,
+       %{
+         run_id: state.run_id,
+         status: state.status,
+         reason: reason,
+         completed_at: state.completed_at
+       }}
     )
   end
 end

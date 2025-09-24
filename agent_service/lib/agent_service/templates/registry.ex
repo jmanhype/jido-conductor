@@ -42,7 +42,7 @@ defmodule AgentService.Templates.Registry do
       {:ok, template} ->
         new_templates = Map.put(state.templates, template.id, template)
         {:reply, {:ok, template}, %{state | templates: new_templates}}
-      
+
       {:error, _reason} = error ->
         {:reply, error, state}
     end
@@ -63,7 +63,7 @@ defmodule AgentService.Templates.Registry do
         |> Enum.filter(&(&1 != nil))
         |> Enum.map(&{&1.id, &1})
         |> Map.new()
-      
+
       {:error, _} ->
         %{}
     end
@@ -72,12 +72,12 @@ defmodule AgentService.Templates.Registry do
   defp load_template(dir_name) do
     template_path = Path.join(@templates_dir, dir_name)
     manifest_path = Path.join(template_path, "jido-template.yaml")
-    
+
     if File.exists?(manifest_path) do
       case YamlElixir.read_from_file(manifest_path) do
         {:ok, manifest} ->
           Template.from_manifest(manifest, dir_name)
-        
+
         {:error, reason} ->
           Logger.error("Failed to load template #{dir_name}: #{inspect(reason)}")
           nil
@@ -91,22 +91,22 @@ defmodule AgentService.Templates.Registry do
     temp_path = upload.path
     template_id = generate_template_id()
     target_dir = Path.join(@templates_dir, template_id)
-    
+
     try do
       # Extract zip file
       File.mkdir_p!(target_dir)
-      
+
       case System.cmd("unzip", ["-q", temp_path, "-d", target_dir]) do
         {_, 0} ->
           # Load the template manifest
           manifest_path = Path.join(target_dir, "jido-template.yaml")
-          
+
           if File.exists?(manifest_path) do
             case YamlElixir.read_from_file(manifest_path) do
               {:ok, manifest} ->
                 template = Template.from_manifest(manifest, template_id)
                 {:ok, template}
-              
+
               {:error, reason} ->
                 File.rm_rf!(target_dir)
                 {:error, "Invalid template manifest: #{inspect(reason)}"}
@@ -115,7 +115,7 @@ defmodule AgentService.Templates.Registry do
             File.rm_rf!(target_dir)
             {:error, "Template manifest not found"}
           end
-        
+
         {error, _} ->
           File.rm_rf!(target_dir)
           {:error, "Failed to extract template: #{error}"}
