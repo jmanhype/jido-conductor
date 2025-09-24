@@ -1,0 +1,199 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  RUST_VERSION: "1.70"
+  NODE_VERSION: "20"
+  ELIXIR_VERSION: "1.16"
+  OTP_VERSION: "26"
+
+jobs:
+  lint-elixir:
+    name: Lint Elixir
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+      
+      - name: Cache Elixir deps
+        uses: actions/cache@v3
+        with:
+          path: agent_service/deps
+          key: ${{ runner.os }}-mix-${{ hashFiles('agent_service/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      
+      - name: Install dependencies
+        working-directory: agent_service
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+      
+      - name: Check formatting
+        working-directory: agent_service
+        run: mix format --check-formatted
+      
+      - name: Run Credo
+        working-directory: agent_service
+        run: mix credo --strict
+
+  test-elixir:
+    name: Test Elixir
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+      
+      - name: Cache Elixir deps
+        uses: actions/cache@v3
+        with:
+          path: agent_service/deps
+          key: ${{ runner.os }}-mix-${{ hashFiles('agent_service/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+      
+      - name: Install dependencies
+        working-directory: agent_service
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get
+      
+      - name: Run tests
+        working-directory: agent_service
+        run: mix test
+
+  lint-frontend:
+    name: Lint Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+      
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: app/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('app/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: Install dependencies
+        working-directory: app
+        run: bun install
+      
+      - name: Run ESLint
+        working-directory: app
+        run: bun run lint
+      
+      - name: Check Prettier formatting
+        working-directory: app
+        run: bun run format:check
+      
+      - name: TypeScript check
+        working-directory: app
+        run: bun run typecheck
+
+  build-tauri:
+    name: Build Tauri App
+    strategy:
+      matrix:
+        platform:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+          - os: macos-latest
+            target: x86_64-apple-darwin
+          - os: macos-latest
+            target: aarch64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+    
+    runs-on: ${{ matrix.platform.os }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          targets: ${{ matrix.platform.target }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+      
+      - name: Install Linux dependencies
+        if: matrix.platform.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+      
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            app/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('app/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      
+      - name: Cache node modules
+        uses: actions/cache@v3
+        with:
+          path: app/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('app/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+      
+      - name: Install frontend dependencies
+        working-directory: app
+        run: bun install
+      
+      - name: Build Tauri app
+        working-directory: app
+        run: bun run tauri:build
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: tauri-${{ matrix.platform.target }}
+          path: app/src-tauri/target/release/bundle/

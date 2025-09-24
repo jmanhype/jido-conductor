@@ -1,5 +1,12 @@
 # JIDO Conductor
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Elixir](https://img.shields.io/badge/Elixir-1.16%2B-purple)](https://elixir-lang.org/)
+[![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange)](https://www.rust-lang.org/)
+[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
+[![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131)](https://tauri.app/)
+[![JIDO Framework](https://img.shields.io/badge/JIDO-1.0.0-green)](https://github.com/agentjido/jido)
+
 A desktop application for managing, running, and monitoring JIDO agents with a Conductor-style UI.
 
 ## Architecture
