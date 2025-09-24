@@ -43,7 +43,7 @@ defmodule AgentService.Templates.Registry do
         new_templates = Map.put(state.templates, template.id, template)
         {:reply, {:ok, template}, %{state | templates: new_templates}}
       
-      {:error, reason} = error ->
+      {:error, _reason} = error ->
         {:reply, error, state}
     end
   end

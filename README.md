@@ -35,6 +35,32 @@ templates/               # Agent templates
 - Claude Code CLI integration
 - Agent-OS 3-layer context support
 - Offline-first with optional online features
+- **Conductor.json Support**: Compatible with Conductor's configuration format
+- **Workspace Isolation**: Isolated execution environments for each run
+- **Script Lifecycle**: Setup, run, and archive scripts with environment variables
+
+## Conductor.json Configuration
+
+JIDO Conductor supports `conductor.json` files for template configuration, providing compatibility with Conductor's format:
+
+```json
+{
+  "name": "my-template",
+  "version": "1.0.0",
+  "setup": "scripts/setup.sh",
+  "run": "scripts/run.sh",
+  "archive": "scripts/archive.sh",
+  "env": {
+    "API_KEY": "value"
+  },
+  "timeout": 3600,
+  "budget": {
+    "max_usd": 10.0
+  }
+}
+```
+
+See [CONDUCTOR-JSON-GUIDE.md](./CONDUCTOR-JSON-GUIDE.md) for detailed documentation.
 
 ## Development
 

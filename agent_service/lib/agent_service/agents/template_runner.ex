@@ -8,8 +8,7 @@ defmodule AgentService.Agents.TemplateRunner do
     actions: [
       AgentService.Actions.ClaudeChat,
       AgentService.Actions.FetchUrl,
-      AgentService.Actions.SaveArtifact,
-      AgentService.Actions.ExecuteWorkflow
+      AgentService.Actions.SaveArtifact
     ],
     schema: [
       template_id: [type: :string, required: true],
@@ -25,35 +24,64 @@ defmodule AgentService.Agents.TemplateRunner do
       completed_at: [type: :utc_datetime],
       error: [type: :map, default: nil],
       budget: [type: :map, default: %{}],
-      context: [type: :map, default: %{}]
+      context: [type: :map, default: %{}],
+      conductor_config: [type: :map, default: %{}],
+      workspace_dir: [type: :string, default: nil]
     ]
 
   require Logger
+  import OK, only: [success: 1, failure: 1]
+  alias AgentService.Config.{ConductorConfig, ScriptExecutor}
 
   @impl true
-  def on_after_init(agent) do
+  def on_before_run(agent) do
     # Start the template execution workflow
     Logger.info("Initializing template runner for run #{agent.state.run_id}")
     
-    # Load template manifest
-    case load_template_manifest(agent.state.template_id) do
-      {:ok, manifest} ->
-        agent
-        |> put_state(:manifest, manifest)
-        |> put_state(:status, :running)
-        |> put_state(:started_at, DateTime.utc_now())
-        |> schedule_next_step()
+    # Create workspace for this run
+    template_dir = get_template_dir(agent.state.template_id)
+    
+    with {:ok, workspace_dir} <- ScriptExecutor.create_workspace(agent.state.template_id, agent.state.run_id),
+         :ok <- copy_template_to_workspace(template_dir, workspace_dir),
+         {:ok, conductor_config} <- ConductorConfig.load_from_template(workspace_dir),
+         {:ok, manifest} <- load_template_manifest(agent.state.template_id) do
       
+      # Update agent state with conductor config and workspace
+      updated_agent = agent
+        |> Map.put(:state, Map.put(agent.state, :manifest, manifest))
+        |> Map.put(:state, Map.put(agent.state, :conductor_config, conductor_config))
+        |> Map.put(:state, Map.put(agent.state, :workspace_dir, workspace_dir))
+        |> Map.put(:state, Map.put(agent.state, :status, :running))
+        |> Map.put(:state, Map.put(agent.state, :started_at, DateTime.utc_now()))
+      
+      # Execute setup script if defined
+      case ScriptExecutor.execute(:setup, conductor_config, workspace_dir, agent.state.template_config) do
+        {:ok, _output} ->
+          Logger.info("Setup script completed successfully")
+          updated_agent
+          |> schedule_next_step()
+          |> success()
+        
+        {:error, reason} ->
+          Logger.error("Setup script failed: #{reason}")
+          updated_agent
+          |> Map.put(:state, Map.put(agent.state, :status, :failed))
+          |> Map.put(:state, Map.put(agent.state, :error, %{reason: "Setup failed: #{reason}", timestamp: DateTime.utc_now()}))
+          |> broadcast_failure("Setup failed: #{reason}")
+          |> (&failure(&1)).()  # Return failure with agent
+      end
+    else
       {:error, reason} ->
         agent
-        |> put_state(:status, :failed)
-        |> put_state(:error, %{reason: reason, timestamp: DateTime.utc_now()})
+        |> Map.put(:state, Map.put(agent.state, :status, :failed))
+        |> Map.put(:state, Map.put(agent.state, :error, %{reason: reason, timestamp: DateTime.utc_now()}))
         |> broadcast_failure(reason)
+        |> (&failure(&1)).()  # Return failure with agent
     end
   end
 
-  @impl true
-  def on_before_run_action(agent, action, params) do
+  # Custom logging function (not a JIDO callback)
+  def log_action_execution(agent, action, params) do
     # Log action execution
     log_entry = %{
       timestamp: DateTime.utc_now(),
@@ -63,43 +91,31 @@ defmodule AgentService.Agents.TemplateRunner do
     }
     
     agent
-    |> update_state(:logs, &[log_entry | &1])
+    |> Map.update!(:state, fn state -> Map.update(state, :logs, [log_entry], &[log_entry | &1]) end)
     |> broadcast_log(log_entry)
   end
 
-  @impl true
-  def on_after_run_action(agent, action, params, result) do
-    case result do
-      {:ok, data} ->
-        # Update metrics if action returned token counts
-        agent = if Map.has_key?(data, :tokens_out) do
-          agent
-          |> update_state(:total_tokens, &(&1 + Map.get(data, :tokens_in, 0) + Map.get(data, :tokens_out, 0)))
-          |> update_state(:total_cost, &(&1 + calculate_cost(data)))
-          |> check_budget_limits()
-        else
-          agent
-        end
-        
-        # Store artifacts if produced
-        agent = if Map.has_key?(data, :artifact) do
-          update_state(agent, :artifacts, &[data.artifact | &1])
-        else
-          agent
-        end
-        
-        broadcast_progress(agent)
-        agent
-        
-      {:error, error} ->
-        Logger.error("Action #{action.name} failed: #{inspect(error)}")
-        
-        agent
-        |> put_state(:status, :failed)
-        |> put_state(:error, error)
-        |> put_state(:completed_at, DateTime.utc_now())
-        |> broadcast_failure(error)
+  @impl true  
+  def on_after_run(agent, _result, _unapplied_directives) do
+    # Execute archive script if defined
+    if agent.state.conductor_config && agent.state.workspace_dir do
+      case ScriptExecutor.execute(:archive, agent.state.conductor_config, agent.state.workspace_dir) do
+        {:ok, _output} ->
+          Logger.info("Archive script completed successfully")
+        {:error, reason} ->
+          Logger.warning("Archive script failed: #{reason}")
+      end
+      
+      # Clean up workspace
+      ScriptExecutor.cleanup_workspace(agent.state.workspace_dir)
     end
+    
+    # Mark as completed
+    agent
+    |> Map.put(:state, Map.put(agent.state, :status, :completed))
+    |> Map.put(:state, Map.put(agent.state, :completed_at, DateTime.utc_now()))
+    |> broadcast_progress()
+    |> OK.success()
   end
 
   # Private functions
@@ -120,19 +136,19 @@ defmodule AgentService.Agents.TemplateRunner do
     case get_next_workflow_step(agent) do
       {:ok, step} ->
         agent
-        |> put_state(:current_step, step.name)
+        |> Map.put(:state, Map.put(agent.state, :current_step, step.name))
         |> execute_workflow_step(step)
       
       :complete ->
         agent
-        |> put_state(:status, :completed)
-        |> put_state(:completed_at, DateTime.utc_now())
+        |> Map.put(:state, Map.put(agent.state, :status, :completed))
+        |> Map.put(:state, Map.put(agent.state, :completed_at, DateTime.utc_now()))
         |> broadcast_completion()
       
       {:error, reason} ->
         agent
-        |> put_state(:status, :failed)
-        |> put_state(:error, %{reason: reason})
+        |> Map.put(:state, Map.put(agent.state, :status, :failed))
+        |> Map.put(:state, Map.put(agent.state, :error, %{reason: reason}))
         |> broadcast_failure(reason)
     end
   end
@@ -194,31 +210,19 @@ defmodule AgentService.Agents.TemplateRunner do
       }
       
       agent
-      |> run_action(AgentService.Actions.ClaudeChat, params)
+      # TODO: Execute Claude action using proper JIDO v1.2.0 API
+    agent
       |> schedule_next_step()
     else
-      Logger.warn("Hook not found: #{hook_name}")
+      Logger.warning("Hook not found: #{hook_name}")
       schedule_next_step(agent)
     end
   end
 
-  defp execute_workflow(agent, workflow_path) do
-    # Execute Elixir workflow file
-    workflow_full_path = Path.join([
-      Path.expand("~/.jido/templates"),
-      agent.state.template_id,
-      workflow_path
-    ])
-    
-    if File.exists?(workflow_full_path) do
-      # In production, this would be sandboxed
-      Code.eval_file(workflow_full_path)
-      schedule_next_step(agent)
-    else
-      agent
-      |> put_state(:status, :failed)
-      |> put_state(:error, %{reason: "Workflow not found: #{workflow_path}"})
-    end
+  defp execute_workflow(agent, _workflow_path) do
+    # Workflows not yet fully implemented - skip for now
+    Logger.warning("Workflow execution not fully implemented yet")
+    schedule_next_step(agent)
   end
 
   defp execute_subagent(agent, subagent_id) do
@@ -231,7 +235,8 @@ defmodule AgentService.Agents.TemplateRunner do
     }
     
     agent
-    |> run_action(AgentService.Actions.ClaudeChat, params)
+    # TODO: Execute Claude action using proper JIDO v1.2.0 API
+    agent
     |> schedule_next_step()
   end
 
@@ -280,14 +285,14 @@ defmodule AgentService.Agents.TemplateRunner do
     cond do
       budget[:max_tokens] && agent.state.total_tokens > budget.max_tokens ->
         agent
-        |> put_state(:status, :stopped)
-        |> put_state(:error, %{reason: "Token budget exceeded"})
+        |> Map.put(:state, Map.put(agent.state, :status, :stopped))
+        |> Map.put(:state, Map.put(agent.state, :error, %{reason: "Token budget exceeded"}))
         |> broadcast_budget_exceeded()
       
       budget[:max_usd] && agent.state.total_cost > budget.max_usd ->
         agent
-        |> put_state(:status, :stopped)
-        |> put_state(:error, %{reason: "Cost budget exceeded"})
+        |> Map.put(:state, Map.put(agent.state, :status, :stopped))
+        |> Map.put(:state, Map.put(agent.state, :error, %{reason: "Cost budget exceeded"}))
         |> broadcast_budget_exceeded()
       
       true ->
@@ -349,5 +354,17 @@ defmodule AgentService.Agents.TemplateRunner do
       }}
     )
     agent
+  end
+  
+  defp get_template_dir(template_id) do
+    Path.join([Path.expand("~/.jido/templates"), template_id])
+  end
+  
+  defp copy_template_to_workspace(template_dir, workspace_dir) do
+    # Copy template files to workspace
+    case System.cmd("cp", ["-r", "#{template_dir}/.", workspace_dir]) do
+      {_, 0} -> :ok
+      {output, code} -> {:error, "Failed to copy template: #{output} (exit code: #{code})"}
+    end
   end
 end

@@ -25,7 +25,7 @@ defmodule AgentService.MixProject do
   defp deps do
     [
       # Core JIDO framework
-      {:jido, "~> 1.0.0"},
+      {:jido, "~> 1.2.0"},
       {:jido_ai, github: "agentjido/jido_ai"},
       
       # Web framework

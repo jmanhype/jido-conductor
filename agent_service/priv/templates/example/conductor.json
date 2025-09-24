@@ -1,0 +1,25 @@
+{
+  "name": "example-template",
+  "version": "1.0.0",
+  "description": "Example template demonstrating conductor.json configuration",
+  "setup": "scripts/setup.sh",
+  "run": "scripts/run.sh",
+  "archive": "scripts/archive.sh",
+  "env": {
+    "TEMPLATE_MODE": "production",
+    "LOG_LEVEL": "info",
+    "MAX_RETRIES": "3",
+    "WORKSPACE_NAME": "example"
+  },
+  "requirements": {
+    "runtime": "bash",
+    "min_version": "4.0",
+    "dependencies": ["curl", "jq"]
+  },
+  "parallel": false,
+  "timeout": 1800,
+  "budget": {
+    "max_usd": 10.0,
+    "max_tokens": 100000
+  }
+}

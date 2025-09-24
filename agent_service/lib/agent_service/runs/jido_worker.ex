@@ -66,7 +66,7 @@ defmodule AgentService.Runs.JidoWorker do
     
     # Stop the JIDO agent
     if state.agent_pid && Process.alive?(state.agent_pid) do
-      Jido.Agent.stop(state.agent_pid)
+      GenServer.stop(state.agent_pid, :normal)
     end
     
     {:stop, :normal, :ok, %{state | status: :stopped}}
@@ -104,7 +104,10 @@ defmodule AgentService.Runs.JidoWorker do
 
   defp start_template_runner(agent_id, config) do
     # Start the JIDO agent with the template runner behavior
-    Jido.Agent.start_link(TemplateRunner, config, name: {:global, agent_id})
+    AgentService.Agents.TemplateRunner.start_link(
+      id: agent_id,
+      initial_state: config
+    )
   end
 
   defp build_agent_context(config) do
