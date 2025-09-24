@@ -49,7 +49,7 @@ defmodule AgentService.MixProject do
       # LiveView (for future UI)
       {:phoenix_live_view, "~> 1.0"},
       {:plug_cowboy, "~> 2.5"},
-      
+
       # Dev dependencies
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]

@@ -96,7 +96,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
-              {stats?.recentActivity?.length > 0 ? (
+              {stats?.recentActivity && stats.recentActivity.length > 0 ? (
                 stats.recentActivity.map((activity: any, i: number) => (
                   <div key={i} className="flex justify-between">
                     <span>{activity.name}</span>

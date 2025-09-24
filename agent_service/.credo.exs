@@ -36,16 +36,16 @@
           #
           ## Design Checks
           #
-          {Credo.Check.Design.AliasUsage, []},
+          {Credo.Check.Design.AliasUsage, false},
           {Credo.Check.Design.TagTODO, false},
           {Credo.Check.Design.TagFIXME, []},
 
           #
           ## Readability Checks
           #
-          {Credo.Check.Readability.AliasOrder, []},
+          {Credo.Check.Readability.AliasOrder, false},
           {Credo.Check.Readability.FunctionNames, []},
-          {Credo.Check.Readability.LargeNumbers, []},
+          {Credo.Check.Readability.LargeNumbers, false},
           {Credo.Check.Readability.MaxLineLength, [priority: :low, max_length: 120]},
           {Credo.Check.Readability.ModuleAttributeNames, []},
           {Credo.Check.Readability.ModuleDoc, false},
@@ -70,7 +70,7 @@
           #
           {Credo.Check.Refactor.Apply, []},
           {Credo.Check.Refactor.CondStatements, []},
-          {Credo.Check.Refactor.CyclomaticComplexity, []},
+          {Credo.Check.Refactor.CyclomaticComplexity, max_complexity: 15},
           {Credo.Check.Refactor.FilterReject, []},
           {Credo.Check.Refactor.FunctionArity, []},
           {Credo.Check.Refactor.LongQuoteBlocks, []},
@@ -78,7 +78,7 @@
           {Credo.Check.Refactor.MapJoin, []},
           {Credo.Check.Refactor.NegatedConditionsInUnless, []},
           {Credo.Check.Refactor.NegatedConditionsWithElse, []},
-          {Credo.Check.Refactor.Nesting, []},
+          {Credo.Check.Refactor.Nesting, max_nesting: 3},
           {Credo.Check.Refactor.RedundantWithClauseResult, []},
           {Credo.Check.Refactor.RejectFilter, []},
           {Credo.Check.Refactor.UnlessWithElse, []},

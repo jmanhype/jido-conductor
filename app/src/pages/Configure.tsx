@@ -118,7 +118,7 @@ export default function Configure() {
                   )}
                   {form.formState.errors[key] && (
                     <p className="text-sm text-destructive">
-                      {form.formState.errors[key]?.message}
+                      {String(form.formState.errors[key]?.message || '')}
                     </p>
                   )}
                 </div>

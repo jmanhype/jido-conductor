@@ -98,7 +98,7 @@ class API {
     });
   }
 
-  async getRunLogs(id: string): Promise<EventSource> {
+  getRunLogs(id: string): EventSource {
     const url = `${API_BASE}/runs/${id}/logs`;
     return new EventSource(url);
   }
