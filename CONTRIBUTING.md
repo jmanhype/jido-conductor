@@ -62,7 +62,7 @@ Update all client applications to handle JSON responses.
 ## Version Bumping
 
 Based on your commits:
-- `fix:` → Patch release (0.0.X)
+- `fix:`, `perf:`, `revert:` → Patch release (0.0.X)
 - `feat:` → Minor release (0.X.0)
 - `BREAKING CHANGE:` or `!` → Major release (X.0.0)
 
