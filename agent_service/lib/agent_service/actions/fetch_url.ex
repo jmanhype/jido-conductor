@@ -18,26 +18,29 @@ defmodule AgentService.Actions.FetchUrl do
     case fetch_content(params.url, params.timeout) do
       {:ok, content} ->
         if params.extract_text do
-          {:ok, %{
-            url: params.url,
-            content: extract_text_content(content),
-            raw_html: content,
-            fetched_at: DateTime.utc_now()
-          }}
+          {:ok,
+           %{
+             url: params.url,
+             content: extract_text_content(content),
+             raw_html: content,
+             fetched_at: DateTime.utc_now()
+           }}
         else
-          {:ok, %{
-            url: params.url,
-            content: content,
-            fetched_at: DateTime.utc_now()
-          }}
+          {:ok,
+           %{
+             url: params.url,
+             content: content,
+             fetched_at: DateTime.utc_now()
+           }}
         end
-      
+
       {:error, reason} ->
-        {:error, %{
-          url: params.url,
-          reason: reason,
-          failed_at: DateTime.utc_now()
-        }}
+        {:error,
+         %{
+           url: params.url,
+           reason: reason,
+           failed_at: DateTime.utc_now()
+         }}
     end
   end
 
@@ -46,19 +49,19 @@ defmodule AgentService.Actions.FetchUrl do
       {"User-Agent", "JIDO-Conductor/1.0"},
       {"Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"}
     ]
-    
+
     options = [
       timeout: timeout,
       recv_timeout: timeout
     ]
-    
+
     case :httpc.request(:get, {String.to_charlist(url), headers}, options, []) do
       {:ok, {{_, 200, _}, _headers, body}} ->
         {:ok, List.to_string(body)}
-      
+
       {:ok, {{_, status_code, _}, _, _}} ->
         {:error, "HTTP #{status_code}"}
-      
+
       {:error, reason} ->
         {:error, inspect(reason)}
     end

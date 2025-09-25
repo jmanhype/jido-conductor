@@ -1,6 +1,13 @@
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Upload, Play, Package2 } from "lucide-react";
@@ -19,7 +26,7 @@ export default function Templates() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.jido.zip')) {
+    if (!file.name.endsWith(".jido.zip")) {
       toast({
         title: "Invalid file",
         description: "Please select a .jido.zip template file",
@@ -48,14 +55,9 @@ export default function Templates() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Templates</h1>
-          <p className="text-muted-foreground">
-            Browse and install agent templates
-          </p>
+          <p className="text-muted-foreground">Browse and install agent templates</p>
         </div>
-        <Button 
-          onClick={() => fileInputRef.current?.click()}
-          variant="outline"
-        >
+        <Button onClick={() => fileInputRef.current?.click()} variant="outline">
           <Upload className="mr-2 h-4 w-4" />
           Install Template
         </Button>
@@ -87,9 +89,7 @@ export default function Templates() {
                   </Badge>
                 ))}
               </div>
-              <p className="text-sm text-muted-foreground mt-2">
-                By {template.author}
-              </p>
+              <p className="text-sm text-muted-foreground mt-2">By {template.author}</p>
             </CardContent>
             <CardFooter>
               <Link to={`/configure/${template.id}`} className="w-full">

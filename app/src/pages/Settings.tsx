@@ -46,9 +46,7 @@ export default function Settings() {
     <div className="space-y-6 max-w-4xl">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
-          Configure your JIDO Conductor preferences
-        </p>
+        <p className="text-muted-foreground">Configure your JIDO Conductor preferences</p>
       </div>
 
       <div className="grid gap-6">
@@ -58,9 +56,7 @@ export default function Settings() {
               <Key className="h-5 w-5" />
               API Keys
             </CardTitle>
-            <CardDescription>
-              Manage your LLM provider API keys
-            </CardDescription>
+            <CardDescription>Manage your LLM provider API keys</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -102,9 +98,7 @@ export default function Settings() {
               <Globe className="h-5 w-5" />
               Network
             </CardTitle>
-            <CardDescription>
-              Control network access and online features
-            </CardDescription>
+            <CardDescription>Control network access and online features</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
@@ -114,11 +108,7 @@ export default function Settings() {
                   Allow network access for templates and remote features
                 </p>
               </div>
-              <Switch
-                id="online-mode"
-                checked={isOnline}
-                onCheckedChange={setIsOnline}
-              />
+              <Switch id="online-mode" checked={isOnline} onCheckedChange={setIsOnline} />
             </div>
           </CardContent>
         </Card>
@@ -129,9 +119,7 @@ export default function Settings() {
               <Shield className="h-5 w-5" />
               Security
             </CardTitle>
-            <CardDescription>
-              Security and privacy settings
-            </CardDescription>
+            <CardDescription>Security and privacy settings</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
@@ -161,9 +149,7 @@ export default function Settings() {
               <Database className="h-5 w-5" />
               Data
             </CardTitle>
-            <CardDescription>
-              Manage your local data and storage
-            </CardDescription>
+            <CardDescription>Manage your local data and storage</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -176,7 +162,9 @@ export default function Settings() {
             <div className="flex gap-2">
               <Button variant="outline">Export Data</Button>
               <Button variant="outline">Clear Cache</Button>
-              <Button variant="destructive" disabled>Reset All Data</Button>
+              <Button variant="destructive" disabled>
+                Reset All Data
+              </Button>
             </div>
           </CardContent>
         </Card>

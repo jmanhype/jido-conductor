@@ -1,13 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import {
-  Home,
-  Package,
-  Settings,
-  PlayCircle,
-  FileText,
-  Cpu,
-} from "lucide-react";
+import { Home, Package, Settings, PlayCircle, Cpu } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home },

@@ -18,7 +18,7 @@ defmodule AgentServiceWeb.Endpoint do
 
   if code_reloading? do
     plug Phoenix.CodeReloader
-    plug Phoenix.Ecto.CheckRepoStatus, otp_app: :agent_service
+    # plug Phoenix.Ecto.CheckRepoStatus, otp_app: :agent_service
   end
 
   plug Plug.RequestId

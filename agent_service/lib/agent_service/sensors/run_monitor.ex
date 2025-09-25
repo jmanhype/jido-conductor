@@ -8,14 +8,17 @@ defmodule AgentService.Sensors.RunMonitor do
     schema: [
       emit_interval: [type: :integer, default: 5000],
       run_id: [type: :string, required: true],
-      metrics: [type: :map, default: %{
-        total_actions: 0,
-        successful_actions: 0,
-        failed_actions: 0,
-        total_tokens: 0,
-        total_cost: 0.0,
-        avg_action_duration: 0
-      }]
+      metrics: [
+        type: :map,
+        default: %{
+          total_actions: 0,
+          successful_actions: 0,
+          failed_actions: 0,
+          total_tokens: 0,
+          total_cost: 0.0,
+          avg_action_duration: 0
+        }
+      ]
     ]
 
   require Logger
@@ -24,10 +27,10 @@ defmodule AgentService.Sensors.RunMonitor do
   def init(config) do
     # Schedule periodic metric emission
     schedule_emit(config.emit_interval)
-    
+
     # Subscribe to run events
     Phoenix.PubSub.subscribe(AgentService.PubSub, "runs:#{config.run_id}")
-    
+
     {:ok, config}
   end
 
@@ -38,10 +41,10 @@ defmodule AgentService.Sensors.RunMonitor do
       run_id: state.run_id,
       timestamp: DateTime.utc_now()
     })
-    
+
     # Schedule next emission
     schedule_emit(state.emit_interval)
-    
+
     {:noreply, state}
   end
 
@@ -49,18 +52,19 @@ defmodule AgentService.Sensors.RunMonitor do
   def handle_info({:log_entry, entry}, state) do
     # Update metrics based on log entry
     new_metrics = update_metrics(state.metrics, entry)
-    
+
     {:noreply, %{state | metrics: new_metrics}}
   end
 
   @impl true
   def handle_info({:metrics, metrics}, state) do
     # Update cumulative metrics
-    new_metrics = %{state.metrics |
-      total_tokens: state.metrics.total_tokens + Map.get(metrics, :tokens_in, 0) + Map.get(metrics, :tokens_out, 0),
-      total_cost: state.metrics.total_cost + Map.get(metrics, :cost, 0)
+    new_metrics = %{
+      state.metrics
+      | total_tokens: state.metrics.total_tokens + Map.get(metrics, :tokens_in, 0) + Map.get(metrics, :tokens_out, 0),
+        total_cost: state.metrics.total_cost + Map.get(metrics, :cost, 0)
     }
-    
+
     # Emit if significant change
     if significant_change?(state.metrics, new_metrics) do
       emit_event(:metrics_threshold, new_metrics, %{
@@ -68,27 +72,30 @@ defmodule AgentService.Sensors.RunMonitor do
         alert: determine_alert(new_metrics)
       })
     end
-    
+
     {:noreply, %{state | metrics: new_metrics}}
   end
 
   @impl true
   def handle_info({:action_completed, result}, state) do
     # Track action completion
-    new_metrics = case result do
-      {:ok, _} ->
-        %{state.metrics |
-          total_actions: state.metrics.total_actions + 1,
-          successful_actions: state.metrics.successful_actions + 1
-        }
-      
-      {:error, _} ->
-        %{state.metrics |
-          total_actions: state.metrics.total_actions + 1,
-          failed_actions: state.metrics.failed_actions + 1
-        }
-    end
-    
+    new_metrics =
+      case result do
+        {:ok, _} ->
+          %{
+            state.metrics
+            | total_actions: state.metrics.total_actions + 1,
+              successful_actions: state.metrics.successful_actions + 1
+          }
+
+        {:error, _} ->
+          %{
+            state.metrics
+            | total_actions: state.metrics.total_actions + 1,
+              failed_actions: state.metrics.failed_actions + 1
+          }
+      end
+
     {:noreply, %{state | metrics: new_metrics}}
   end
 
@@ -109,13 +116,13 @@ defmodule AgentService.Sensors.RunMonitor do
     case log_entry[:event] do
       "action_start" ->
         %{metrics | total_actions: metrics.total_actions + 1}
-      
+
       "action_complete" ->
         %{metrics | successful_actions: metrics.successful_actions + 1}
-      
+
       "action_failed" ->
         %{metrics | failed_actions: metrics.failed_actions + 1}
-      
+
       _ ->
         metrics
     end
@@ -125,7 +132,7 @@ defmodule AgentService.Sensors.RunMonitor do
     # Determine if metrics changed significantly
     cost_change = abs(new_metrics.total_cost - old_metrics.total_cost)
     token_change = abs(new_metrics.total_tokens - old_metrics.total_tokens)
-    
+
     cost_change > 0.01 || token_change > 1000
   end
 
@@ -133,13 +140,13 @@ defmodule AgentService.Sensors.RunMonitor do
     cond do
       metrics.failed_actions > 5 ->
         :high_failure_rate
-      
+
       metrics.total_cost > 10.0 ->
         :high_cost
-      
+
       metrics.total_tokens > 100_000 ->
         :high_token_usage
-      
+
       true ->
         :none
     end
@@ -153,13 +160,13 @@ defmodule AgentService.Sensors.RunMonitor do
       metadata: metadata,
       timestamp: DateTime.utc_now()
     }
-    
+
     Phoenix.PubSub.broadcast(
       AgentService.PubSub,
       "sensors:run_monitor",
       {:sensor_event, event}
     )
-    
+
     Logger.debug("RunMonitor emitted #{event_type}: #{inspect(data)}")
   end
 end

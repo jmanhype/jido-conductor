@@ -1,27 +1,27 @@
 defmodule AgentService.Runs.Worker do
   use GenServer, restart: :temporary
   require Logger
-  
+
   alias AgentService.Providers.LLM.ClaudeCLI
 
   def start_link({run_id, config}) do
-    GenServer.start_link(__MODULE__, {run_id, config}, 
-      name: {:via, Registry, {AgentService.RunRegistry, run_id}})
+    GenServer.start_link(__MODULE__, {run_id, config}, name: {:via, Registry, {AgentService.RunRegistry, run_id}})
   end
 
   def init({run_id, config}) do
     Logger.info("Starting run worker: #{run_id}")
-    
+
     # Start processing in background
     Process.send_after(self(), :start_processing, 100)
-    
-    {:ok, %{
-      run_id: run_id,
-      config: config,
-      status: "running",
-      logs: [],
-      total_cost: 0
-    }}
+
+    {:ok,
+     %{
+       run_id: run_id,
+       config: config,
+       status: "running",
+       logs: [],
+       total_cost: 0
+     }}
   end
 
   def handle_call(:get_state, _from, state) do
@@ -38,12 +38,12 @@ defmodule AgentService.Runs.Worker do
       tokens: 0,
       cost: 0
     }
-    
+
     broadcast_log(state.run_id, log_entry)
-    
+
     # Schedule next processing step
     Process.send_after(self(), :process_step, 2000)
-    
+
     {:noreply, %{state | logs: [log_entry | state.logs]}}
   end
 
@@ -52,8 +52,9 @@ defmodule AgentService.Runs.Worker do
     case ClaudeCLI.chat("Analyze this configuration: #{inspect(state.config)}") do
       {:ok, result} ->
         tokens = Map.get(result, :tokens_out, 100)
-        cost = tokens * 0.00001  # Example cost calculation
-        
+        # Example cost calculation
+        cost = tokens * 0.00001
+
         log_entry = %{
           timestamp: DateTime.utc_now(),
           event: "llm_response",
@@ -62,21 +63,18 @@ defmodule AgentService.Runs.Worker do
           tokens: tokens,
           cost: cost
         }
-        
+
         broadcast_log(state.run_id, log_entry)
-        
+
         # Continue or complete
         if length(state.logs) < 5 do
           Process.send_after(self(), :process_step, 3000)
         else
           Process.send(self(), :complete, [])
         end
-        
-        {:noreply, %{state | 
-          logs: [log_entry | state.logs],
-          total_cost: state.total_cost + cost
-        }}
-      
+
+        {:noreply, %{state | logs: [log_entry | state.logs], total_cost: state.total_cost + cost}}
+
       {:error, reason} ->
         log_entry = %{
           timestamp: DateTime.utc_now(),
@@ -86,7 +84,7 @@ defmodule AgentService.Runs.Worker do
           tokens: 0,
           cost: 0
         }
-        
+
         broadcast_log(state.run_id, log_entry)
         {:noreply, %{state | logs: [log_entry | state.logs], status: "failed"}}
     end
@@ -94,13 +92,13 @@ defmodule AgentService.Runs.Worker do
 
   def handle_info(:complete, state) do
     Logger.info("Run completed: #{state.run_id}")
-    
+
     Phoenix.PubSub.broadcast(
       AgentService.PubSub,
       "runs:#{state.run_id}",
       {:run_completed, state.run_id}
     )
-    
+
     {:stop, :normal, %{state | status: "completed"}}
   end
 

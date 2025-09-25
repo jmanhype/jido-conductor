@@ -26,7 +26,7 @@ export default function RunDetails() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  const run = runs.find(r => r.id === runId);
+  const run = runs.find((r) => r.id === runId);
 
   useEffect(() => {
     if (!runId) return;
@@ -45,7 +45,7 @@ export default function RunDetails() {
         if (data.connected) {
           console.log("Connected to log stream");
         } else {
-          setLogs(prev => [...prev, data as LogEntry]);
+          setLogs((prev) => [...prev, data as LogEntry]);
           // Auto-scroll to bottom
           if (scrollAreaRef.current) {
             scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
@@ -82,10 +82,10 @@ export default function RunDetails() {
   };
 
   const downloadLogs = () => {
-    const content = logs.map(log => 
-      `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`
-    ).join("\n");
-    
+    const content = logs
+      .map((log) => `[${log.timestamp}] ${log.level.toUpperCase()}: ${log.message}`)
+      .join("\n");
+
     const blob = new Blob([content], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -97,9 +97,12 @@ export default function RunDetails() {
 
   const getLogColor = (level: string) => {
     switch (level) {
-      case "error": return "text-red-600";
-      case "warning": return "text-yellow-600";
-      default: return "text-foreground";
+      case "error":
+        return "text-red-600";
+      case "warning":
+        return "text-yellow-600";
+      default:
+        return "text-foreground";
     }
   };
 
@@ -128,9 +131,7 @@ export default function RunDetails() {
             Back
           </Button>
           <h1 className="text-2xl font-bold">Run Details</h1>
-          <Badge variant={run.status === "running" ? "default" : "secondary"}>
-            {run.status}
-          </Badge>
+          <Badge variant={run.status === "running" ? "default" : "secondary"}>{run.status}</Badge>
           {isConnected && (
             <Badge variant="outline" className="bg-green-50">
               Live
@@ -194,9 +195,7 @@ export default function RunDetails() {
                   <span className="text-muted-foreground">
                     [{new Date(log.timestamp).toLocaleTimeString()}]
                   </span>
-                  <span className={`ml-2 ${getLogColor(log.level)}`}>
-                    {log.message}
-                  </span>
+                  <span className={`ml-2 ${getLogColor(log.level)}`}>{log.message}</span>
                   {log.tokens && (
                     <span className="ml-2 text-muted-foreground text-xs">
                       ({log.tokens} tokens)

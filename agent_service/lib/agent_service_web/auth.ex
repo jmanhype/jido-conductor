@@ -11,6 +11,7 @@ defmodule AgentServiceWeb.Auth do
       [token] when is_binary(token) ->
         # TODO: Validate token against session store
         conn
+
       _ ->
         # For development, allow requests without token
         if Mix.env() == :dev do

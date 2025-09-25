@@ -1,0 +1,64 @@
+repos:
+  # Elixir formatting and linting
+  - repo: local
+    hooks:
+      - id: mix-format
+        name: Mix Format
+        entry: bash -c 'cd agent_service && mix format --check-formatted'
+        language: system
+        files: \.exs?$
+        pass_filenames: false
+
+      - id: mix-credo
+        name: Mix Credo
+        entry: bash -c 'cd agent_service && mix credo --strict'
+        language: system
+        files: \.exs?$
+        pass_filenames: false
+
+  # TypeScript/JavaScript linting
+  - repo: local
+    hooks:
+      - id: eslint
+        name: ESLint
+        entry: bash -c 'cd app && bun run lint'
+        language: system
+        files: \.(tsx?|jsx?)$
+        pass_filenames: false
+
+      - id: prettier
+        name: Prettier
+        entry: bash -c 'cd app && bun run format:check'
+        language: system
+        files: \.(tsx?|jsx?|css|json|md)$
+        pass_filenames: false
+
+  # Rust formatting and linting
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: Cargo Format
+        entry: bash -c 'cd app/src-tauri && cargo fmt -- --check'
+        language: system
+        files: \.rs$
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: Cargo Clippy
+        entry: bash -c 'cd app/src-tauri && cargo clippy -- -D warnings'
+        language: system
+        files: \.rs$
+        pass_filenames: false
+
+  # General checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
