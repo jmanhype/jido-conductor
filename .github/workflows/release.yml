@@ -82,6 +82,11 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev
       
+      - name: Install macOS dependencies
+        if: matrix.platform.os == 'macos-latest'
+        run: |
+          brew install create-dmg
+      
       - name: Install frontend dependencies
         working-directory: app
         run: bun install
