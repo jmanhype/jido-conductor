@@ -1,9 +1,10 @@
 name: Build and Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_run:
+    workflows: ["Semantic Release"]
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       tag_name:
@@ -115,10 +116,24 @@ jobs:
   release:
     needs: build-binaries
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag_name }}" >> $GITHUB_OUTPUT
+          else
+            # Get the latest tag created by semantic-release
+            LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+            echo "tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -128,34 +143,15 @@ jobs:
       - name: Display structure
         run: ls -R artifacts
 
-      - name: Create Release
+      - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
-          name: JIDO Conductor ${{ github.event.inputs.tag_name || github.ref_name }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
+          tag_name: ${{ steps.get_tag.outputs.tag }}
           files: |
             artifacts/**/*.dmg
             artifacts/**/*.msi
             artifacts/**/*.exe
             artifacts/**/*.deb
             artifacts/**/*.AppImage
-          body: |
-            ## Installation
-            
-            ### macOS
-            - **aarch64 (Apple Silicon M1/M2/M3)**: `*aarch64*.dmg`
-            - **x64 (Intel)**: `*x86_64*.dmg`
-            
-            ### Windows
-            - **MSI Installer**: `*.msi`
-            - **NSIS Installer**: `*.exe`
-            
-            ### Linux
-            - **Debian/Ubuntu**: `*.deb`
-            - **AppImage**: `*.AppImage`
-            
-            ## What's Changed
-            See the full changelog below for details.
+          # Don't update release body or name since semantic-release already created it
+          fail_on_unmatched_files: false
