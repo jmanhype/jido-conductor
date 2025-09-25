@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  RUST_VERSION: "1.80"
+  RUST_VERSION: "stable"
   NODE_VERSION: "20"
   ELIXIR_VERSION: "1.16"
   OTP_VERSION: "26"
