@@ -1,1 +1,1 @@
-{}
+{"default":{"identifier":"default","description":"Default permissions for the JIDO Conductor application","local":true,"permissions":["core:default","shell:allow-execute","shell:allow-open","fs:default","fs:allow-read-file","fs:allow-write-file","fs:allow-create","fs:allow-remove","fs:allow-exists","http:default"]}}
