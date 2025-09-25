@@ -1,213 +1,87 @@
 # Contributing to JIDO Conductor
 
-We love your input! We want to make contributing to JIDO Conductor as easy and transparent as possible, whether it's:
+## Commit Message Format
 
-- Reporting a bug
-- Discussing the current state of the code
-- Submitting a fix
-- Proposing new features
-- Becoming a maintainer
+This repository enforces **Conventional Commits** for automatic semantic versioning and changelog generation.
 
-## Development Process
+### Format
+```
+<type>(<scope>): <subject>
 
-We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
+<body>
 
-1. Fork the repo and create your branch from `main`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. Issue that pull request!
+<footer>
+```
 
-## Pull Request Process
+### Types
+- **feat**: A new feature (triggers MINOR version bump)
+- **fix**: A bug fix (triggers PATCH version bump)
+- **docs**: Documentation only changes
+- **style**: Changes that don't affect code meaning (white-space, formatting)
+- **refactor**: Code change that neither fixes a bug nor adds a feature
+- **perf**: Performance improvements (triggers PATCH version bump)
+- **test**: Adding or updating tests
+- **build**: Changes to build system or dependencies
+- **ci**: Changes to CI configuration files
+- **chore**: Other changes that don't modify src or test files
+- **revert**: Reverts a previous commit (triggers PATCH version bump)
 
-1. Update the README.md with details of changes to the interface, this includes new environment variables, exposed ports, useful file locations and container parameters.
-2. Update the docs/ with any new functionality or API changes.
-3. The PR will be merged once you have the sign-off of at least one other developer.
+### Breaking Changes
+Add `BREAKING CHANGE:` in the footer or `!` after the type to trigger a MAJOR version bump:
+```
+feat!: remove support for Node 16
 
-## Development Setup
+BREAKING CHANGE: Node 16 is no longer supported. Minimum version is now Node 18.
+```
 
-### Prerequisites
+### Examples
 
-- Rust 1.70+
-- Node.js 20+
-- Elixir 1.16+ & Erlang/OTP 26+
-- Claude Code CLI (for agent execution)
+#### Feature
+```
+feat(auth): add OAuth2 integration
 
-### Setting Up Your Development Environment
+Implemented Google and GitHub OAuth providers
+with automatic token refresh
+```
 
+#### Fix
+```
+fix(ui): correct button alignment on mobile
+
+Buttons were overlapping on screens < 400px
+```
+
+#### Breaking Change
+```
+feat(api)!: change response format to JSON
+
+BREAKING CHANGE: API now returns JSON instead of XML.
+Update all client applications to handle JSON responses.
+```
+
+## Version Bumping
+
+Based on your commits:
+- `fix:` → Patch release (0.0.X)
+- `feat:` → Minor release (0.X.0)
+- `BREAKING CHANGE:` or `!` → Major release (X.0.0)
+
+## Automated Releases
+
+When commits are pushed to `main`, semantic-release will:
+1. Analyze commit messages
+2. Determine version bump type
+3. Update version in package.json and other files
+4. Generate CHANGELOG.md
+5. Create GitHub release with notes
+6. Tag the release
+
+## Pre-commit Hooks
+
+This repository uses husky and commitlint to validate commit messages.
+If your commit message doesn't follow the convention, it will be rejected.
+
+To bypass hooks in emergency (not recommended):
 ```bash
-# Clone your fork
-git clone https://github.com/your-username/jido-conductor.git
-cd jido-conductor/.conductor/islamabad
-
-# Install pre-commit hooks
-pip install pre-commit
-pre-commit install
-
-# Frontend setup
-cd app
-bun install  # or npm install
-
-# Backend setup
-cd ../agent_service
-mix deps.get
-mix deps.compile
+git commit --no-verify -m "your message"
 ```
-
-### Running the Development Environment
-
-```bash
-# Terminal 1: Start the agent service
-cd agent_service
-mix phx.server
-
-# Terminal 2: Start the Tauri app
-cd app
-bun run tauri:dev
-```
-
-## Code Style
-
-### Elixir
-
-- Follow the official [Elixir Style Guide](https://github.com/christopheradams/elixir_style_guide)
-- Use `mix format` before committing
-- Run `mix credo --strict` for additional checks
-
-### TypeScript/React
-
-- We use ESLint and Prettier for code formatting
-- Run `bun run lint` to check for linting errors
-- Run `bun run format` to auto-format code
-
-### Rust
-
-- Follow the official [Rust Style Guide](https://doc.rust-lang.org/1.0.0/style/)
-- Use `cargo fmt` before committing
-- Run `cargo clippy` for additional checks
-
-## Testing
-
-### Elixir Tests
-
-```bash
-cd agent_service
-mix test
-```
-
-### Frontend Tests
-
-```bash
-cd app
-bun test
-```
-
-### Integration Tests
-
-```bash
-# Run the full test suite
-./scripts/test.sh
-```
-
-## Project Structure
-
-```
-.conductor/islamabad/
-├── app/                     # Tauri + React desktop application
-│   ├── src/                # React source code
-│   ├── src-tauri/         # Rust/Tauri backend
-│   └── public/            # Static assets
-├── agent_service/          # Elixir + JIDO agent service
-│   ├── lib/               # Application code
-│   ├── test/              # Tests
-│   └── config/            # Configuration
-├── templates/              # Agent templates
-└── docs/                   # Documentation
-```
-
-## Key Components
-
-### Frontend (React/TypeScript)
-
-- **Components**: Reusable UI components in `app/src/components/`
-- **Pages**: Route-based pages in `app/src/pages/`
-- **Services**: API client and utilities in `app/src/services/`
-- **Store**: Zustand state management in `app/src/store/`
-
-### Backend (Elixir/JIDO)
-
-- **Actions**: JIDO actions in `agent_service/lib/agent_service/actions/`
-- **Agents**: JIDO agents in `agent_service/lib/agent_service/agents/`
-- **Workflows**: JIDO workflows in `agent_service/lib/agent_service/workflows/`
-- **API**: Phoenix controllers in `agent_service/lib/agent_service_web/controllers/`
-
-## Commit Messages
-
-We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
-
-- `feat:` New feature
-- `fix:` Bug fix
-- `docs:` Documentation changes
-- `style:` Code style changes (formatting, etc)
-- `refactor:` Code refactoring
-- `test:` Adding or updating tests
-- `chore:` Maintenance tasks
-
-Examples:
-```
-feat: add template import functionality
-fix: resolve race condition in agent execution
-docs: update API reference for runs endpoint
-```
-
-## Reporting Bugs
-
-We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/yourusername/jido-conductor/issues/new).
-
-**Great Bug Reports** tend to have:
-
-- A quick summary and/or background
-- Steps to reproduce
-  - Be specific!
-  - Give sample code if you can
-- What you expected would happen
-- What actually happens
-- Notes (possibly including why you think this might be happening, or stuff you tried that didn't work)
-
-## Feature Requests
-
-We're always looking for suggestions to improve JIDO Conductor! If you have a feature request, please:
-
-1. Check if the feature has already been requested in [Issues](https://github.com/yourusername/jido-conductor/issues)
-2. If not, create a new issue with the `enhancement` label
-3. Describe the feature and why it would be useful
-4. Provide examples of how it would work
-
-## License
-
-By contributing, you agree that your contributions will be licensed under the MIT License.
-
-## Code of Conduct
-
-### Our Pledge
-
-We pledge to make participation in our project and community a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
-
-### Our Standards
-
-Examples of behavior that contributes to creating a positive environment include:
-
-- Using welcoming and inclusive language
-- Being respectful of differing viewpoints and experiences
-- Gracefully accepting constructive criticism
-- Focusing on what is best for the community
-- Showing empathy towards other community members
-
-### Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project team. All complaints will be reviewed and investigated and will result in a response that is deemed necessary and appropriate to the circumstances.
-
-## Questions?
-
-Feel free to open an issue with your question or reach out to the maintainers directly.

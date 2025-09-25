@@ -8,9 +8,21 @@
     "build": "cd app && bun run tauri:build",
     "setup": "npm run setup:app && npm run setup:service",
     "setup:app": "cd app && bun install",
-    "setup:service": "cd agent_service && mix deps.get"
+    "setup:service": "cd agent_service && mix deps.get",
+    "prepare": "husky",
+    "release": "semantic-release",
+    "release:dry-run": "semantic-release --dry-run"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@commitlint/cli": "^20.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.6",
+    "@semantic-release/release-notes-generator": "^14.1.0",
+    "concurrently": "^9.1.2",
+    "husky": "^9.1.7",
+    "semantic-release": "^24.2.9"
   }
 }
