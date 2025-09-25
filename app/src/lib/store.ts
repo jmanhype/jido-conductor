@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { api } from './api';
+import { create } from "zustand";
+import { api } from "./api";
 
 interface Template {
   id: string;
@@ -15,7 +15,7 @@ interface Run {
   id: string;
   templateId: string;
   templateName: string;
-  status: 'running' | 'stopped' | 'failed' | 'completed';
+  status: "running" | "stopped" | "failed" | "completed";
   startedAt: string;
   config: any;
   budget?: {
@@ -36,15 +36,15 @@ interface AgentStore {
   runs: Run[];
   stats: Stats | null;
   sessionToken: string | null;
-  
+
   fetchTemplates: () => Promise<void>;
   fetchRuns: () => Promise<void>;
   fetchStats: () => Promise<void>;
   setSessionToken: (token: string) => void;
-  
+
   startRun: (templateId: string, config: any) => Promise<Run>;
   stopRun: (runId: string) => Promise<void>;
-  
+
   installTemplate: (file: File) => Promise<void>;
 }
 
@@ -59,7 +59,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       const templates = await api.getTemplates();
       set({ templates });
     } catch (error) {
-      console.error('Failed to fetch templates:', error);
+      console.error("Failed to fetch templates:", error);
     }
   },
 
@@ -68,7 +68,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       const runs = await api.getRuns();
       set({ runs });
     } catch (error) {
-      console.error('Failed to fetch runs:', error);
+      console.error("Failed to fetch runs:", error);
     }
   },
 
@@ -77,7 +77,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
       const stats = await api.getStats();
       set({ stats });
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      console.error("Failed to fetch stats:", error);
     }
   },
 
@@ -95,9 +95,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
 
   stopRun: async (runId: string) => {
     await api.stopRun(runId);
-    const runs = get().runs.map(r => 
-      r.id === runId ? { ...r, status: 'stopped' as const } : r
-    );
+    const runs = get().runs.map((r) => (r.id === runId ? { ...r, status: "stopped" as const } : r));
     set({ runs });
   },
 

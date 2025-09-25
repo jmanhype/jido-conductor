@@ -18,9 +18,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Monitor your agents and system health
-        </p>
+        <p className="text-muted-foreground">Monitor your agents and system health</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -60,9 +58,7 @@ export default function Dashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              ${stats?.todayCost?.toFixed(2) || "0.00"}
-            </div>
+            <div className="text-2xl font-bold">${stats?.todayCost?.toFixed(2) || "0.00"}</div>
           </CardContent>
         </Card>
       </div>

@@ -1,6 +1,6 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from "@tauri-apps/api/core";
 
-const API_BASE = 'http://127.0.0.1:8745/v1';
+const API_BASE = "http://127.0.0.1:8745/v1";
 
 class API {
   private sessionToken: string | null = null;
@@ -11,10 +11,10 @@ class API {
 
   private async initSessionToken() {
     try {
-      const token = await invoke<string>('get_session_token');
+      const token = await invoke<string>("get_session_token");
       this.sessionToken = token;
     } catch (error) {
-      console.error('Failed to get session token:', error);
+      console.error("Failed to get session token:", error);
     }
   }
 
@@ -24,12 +24,12 @@ class API {
 
   private async request(path: string, options: RequestInit = {}) {
     const headers: any = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...options.headers,
     };
 
     if (this.sessionToken) {
-      headers['X-Local-Token'] = this.sessionToken;
+      headers["X-Local-Token"] = this.sessionToken;
     }
 
     const response = await fetch(`${API_BASE}${path}`, {
@@ -45,7 +45,7 @@ class API {
   }
 
   async getTemplates() {
-    return this.request('/templates');
+    return this.request("/templates");
   }
 
   async getTemplate(id: string) {
@@ -54,12 +54,12 @@ class API {
 
   async installTemplate(file: File) {
     const formData = new FormData();
-    formData.append('template', file);
+    formData.append("template", file);
 
     const response = await fetch(`${API_BASE}/templates/install`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'X-Local-Token': this.sessionToken || '',
+        "X-Local-Token": this.sessionToken || "",
       },
       body: formData,
     });
@@ -72,7 +72,7 @@ class API {
   }
 
   async getRuns() {
-    return this.request('/runs');
+    return this.request("/runs");
   }
 
   async getRun(id: string) {
@@ -86,15 +86,15 @@ class API {
     schedule?: string;
     budget?: { maxUsd?: number; maxTokens?: number };
   }) {
-    return this.request('/runs', {
-      method: 'POST',
+    return this.request("/runs", {
+      method: "POST",
       body: JSON.stringify(body),
     });
   }
 
   async stopRun(id: string) {
     return this.request(`/runs/${id}/stop`, {
-      method: 'POST',
+      method: "POST",
     });
   }
 
@@ -104,23 +104,23 @@ class API {
   }
 
   async getStats() {
-    return this.request('/stats');
+    return this.request("/stats");
   }
 
   async getHealth() {
-    return this.request('/healthz');
+    return this.request("/healthz");
   }
 
   async storeSecret(key: string, value: string) {
-    return invoke('store_secret', { key, value });
+    return invoke("store_secret", { key, value });
   }
 
   async getSecret(key: string): Promise<string> {
-    return invoke('get_secret', { key });
+    return invoke("get_secret", { key });
   }
 
   async deleteSecret(key: string) {
-    return invoke('delete_secret', { key });
+    return invoke("delete_secret", { key });
   }
 }
 

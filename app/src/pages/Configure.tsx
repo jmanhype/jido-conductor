@@ -20,12 +20,11 @@ export default function Configure() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm({
-    resolver: template?.config_schema ? 
-      zodResolver(z.object(template.config_schema)) : undefined,
+    resolver: template?.config_schema ? zodResolver(z.object(template.config_schema)) : undefined,
   });
 
   useEffect(() => {
-    const tmpl = templates.find(t => t.id === templateId);
+    const tmpl = templates.find((t) => t.id === templateId);
     if (tmpl) {
       setTemplate(tmpl);
     }
@@ -84,46 +83,43 @@ export default function Configure() {
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* Dynamic form fields based on config_schema */}
-            {template.config_schema?.properties && 
-              Object.entries(template.config_schema.properties).map(([key, schema]: [string, any]) => (
-                <div key={key} className="space-y-2">
-                  <Label htmlFor={key}>
-                    {schema.title || key}
-                    {template.config_schema.required?.includes(key) && (
-                      <span className="text-destructive ml-1">*</span>
+            {template.config_schema?.properties &&
+              Object.entries(template.config_schema.properties).map(
+                ([key, schema]: [string, any]) => (
+                  <div key={key} className="space-y-2">
+                    <Label htmlFor={key}>
+                      {schema.title || key}
+                      {template.config_schema.required?.includes(key) && (
+                        <span className="text-destructive ml-1">*</span>
+                      )}
+                    </Label>
+                    {schema.type === "array" ? (
+                      <Textarea
+                        id={key}
+                        {...form.register(key)}
+                        placeholder={schema.description || `Enter ${key} (one per line)`}
+                        rows={3}
+                      />
+                    ) : schema.type === "integer" || schema.type === "number" ? (
+                      <Input
+                        id={key}
+                        type="number"
+                        {...form.register(key, { valueAsNumber: true })}
+                        placeholder={schema.description}
+                        min={schema.minimum}
+                        max={schema.maximum}
+                      />
+                    ) : (
+                      <Input id={key} {...form.register(key)} placeholder={schema.description} />
                     )}
-                  </Label>
-                  {schema.type === "array" ? (
-                    <Textarea
-                      id={key}
-                      {...form.register(key)}
-                      placeholder={schema.description || `Enter ${key} (one per line)`}
-                      rows={3}
-                    />
-                  ) : schema.type === "integer" || schema.type === "number" ? (
-                    <Input
-                      id={key}
-                      type="number"
-                      {...form.register(key, { valueAsNumber: true })}
-                      placeholder={schema.description}
-                      min={schema.minimum}
-                      max={schema.maximum}
-                    />
-                  ) : (
-                    <Input
-                      id={key}
-                      {...form.register(key)}
-                      placeholder={schema.description}
-                    />
-                  )}
-                  {form.formState.errors[key] && (
-                    <p className="text-sm text-destructive">
-                      {String(form.formState.errors[key]?.message || '')}
-                    </p>
-                  )}
-                </div>
-              ))
-            }
+                    {form.formState.errors[key] && (
+                      <p className="text-sm text-destructive">
+                        {String(form.formState.errors[key]?.message || "")}
+                      </p>
+                    )}
+                  </div>
+                )
+              )}
 
             <div className="pt-4">
               <Button type="submit" disabled={isSubmitting} className="w-full">
