@@ -1,1 +1,6 @@
-bun test
+#!/usr/bin/env sh
+
+# Only run tests if test files exist
+if find . -name "*.test.*" -o -name "*.spec.*" -o -name "*_test_*" -o -name "*_spec_*" 2>/dev/null | grep -q .; then
+  bun test
+fi
