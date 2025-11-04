@@ -1,3 +1,7 @@
+## 1.1.0 (2025-11-04)
+
+* feat: add Claude Code autonomous self-improvement workflow ([ab5eb4c](https://github.com/jmanhype/jido-conductor/commit/ab5eb4c))
+
 ## 1.0.0 (2025-09-25)
 
 * fix: add missing version to package.json for semantic-release (#7) ([7423874](https://github.com/jmanhype/jido-conductor/commit/7423874)), closes [#7](https://github.com/jmanhype/jido-conductor/issues/7)
