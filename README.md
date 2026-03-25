@@ -1,47 +1,29 @@
-# JIDO Conductor
+# jido-conductor
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Elixir](https://img.shields.io/badge/Elixir-1.16%2B-purple)](https://elixir-lang.org/)
-[![Rust](https://img.shields.io/badge/Rust-1.70%2B-orange)](https://www.rust-lang.org/)
-[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
-[![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131)](https://tauri.app/)
-[![JIDO Framework](https://img.shields.io/badge/JIDO-1.0.0-green)](https://github.com/agentjido/jido)
+Desktop application for managing JIDO autonomous agents. Tauri shell (Rust) with a React frontend and an Elixir agent service backend.
 
-A desktop application for managing, running, and monitoring JIDO agents with a Conductor-style UI.
+## Status
 
-## Architecture
+Early development. The Tauri + React shell renders and the Elixir agent service starts, but the two halves communicate over a loopback HTTP API that is partially wired. No packaged releases exist.
 
-- **Desktop Shell**: Tauri (Rust) + React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
-- **Agent Runtime**: Elixir (JIDO) + Phoenix/Bandit (local HTTP server on port 8745)
-- **Storage**: SQLite (dev) / PostgreSQL (prod)
-- **Security**: Loopback-only HTTP, OS Keychain for secrets, strict Tauri allowlist
+| Component | State |
+|---|---|
+| Desktop shell (Tauri 2 + React 18) | UI scaffolded with shadcn/ui; template gallery, run management pages |
+| Agent service (Elixir + JIDO) | Phoenix API on port 8745; template registry, run worker, SSE log streaming |
+| Conductor.json support | Parser and executor implemented |
+| Tests | 1 test config file (`test.exs`); no test modules |
+| CI | 3 workflow files (CI, build-release, semantic-release) |
+| Releases | None published |
 
-## Project Structure
+## What it does
 
-```
-app/                     # Tauri + React desktop application
-agent_service/           # Elixir + JIDO agent service
-templates/               # Agent templates
-.claude/                 # Claude Code integration
-```
+1. Users browse and import agent templates (`.jido.zip` archives with a `conductor.json` manifest)
+2. Configure runs with schema-validated parameters
+3. The agent service executes runs in isolated workspaces via setup/run/archive shell scripts
+4. Live logs stream back to the desktop UI over SSE
+5. Budget tracking and cost management per run
 
-## Features
-
-- Template gallery with import/export (.jido.zip)
-- Schema-driven configuration with validation
-- Live monitoring with SSE log streaming
-- Budget management and cost tracking
-- Secure secrets management via OS Keychain
-- Claude Code CLI integration
-- Agent-OS 3-layer context support
-- Offline-first with optional online features
-- **Conductor.json Support**: Compatible with Conductor's configuration format
-- **Workspace Isolation**: Isolated execution environments for each run
-- **Script Lifecycle**: Setup, run, and archive scripts with environment variables
-
-## Conductor.json Configuration
-
-JIDO Conductor supports `conductor.json` files for template configuration, providing compatibility with Conductor's format:
+### conductor.json format
 
 ```json
 {
@@ -50,42 +32,70 @@ JIDO Conductor supports `conductor.json` files for template configuration, provi
   "setup": "scripts/setup.sh",
   "run": "scripts/run.sh",
   "archive": "scripts/archive.sh",
-  "env": {
-    "API_KEY": "value"
-  },
+  "env": { "API_KEY": "value" },
   "timeout": 3600,
-  "budget": {
-    "max_usd": 10.0
-  }
+  "budget": { "max_usd": 10.0 }
 }
 ```
 
-See [CONDUCTOR-JSON-GUIDE.md](./CONDUCTOR-JSON-GUIDE.md) for detailed documentation.
+## Stack
 
-## Development
+| Layer | Technology | Version |
+|---|---|---|
+| Desktop shell | Tauri (Rust) | 2.0 |
+| Frontend | React 18, TypeScript, Vite, Tailwind, shadcn/ui | See `app/package.json` |
+| State management | Zustand | 5.x |
+| Agent runtime | Elixir, JIDO framework | 1.16+ / jido ~> 1.2.0 |
+| Web framework | Phoenix + Bandit | ~> 1.7.14 |
+| Database | SQLite (dev), PostgreSQL (prod) | ecto_sqlite3 ~> 0.17 |
+| Forms | react-hook-form + zod | -- |
 
-### Prerequisites
-- Rust & Cargo
-- Node.js 20+ & Bun/PNPM
-- Elixir 1.16+ & Erlang/OTP 26+
-- Claude Code CLI (for agent execution)
+## Repository layout
 
-### Setup
-```bash
-# Install dependencies
-cd app && bun install
-cd ../agent_service && mix deps.get
-
-# Run development servers
-cd app && bun run tauri dev
-cd agent_service && mix phx.server
+```
+app/                    Tauri + React desktop app
+  src-tauri/            Rust shell, capabilities, icons
+  src/                  React components, pages, stores
+agent_service/          Elixir Phoenix service
+  lib/agent_service/    Actions, agents, config, providers, runs, sensors, templates
+  priv/templates/       Example conductor.json template
+.github/workflows/      CI, build-release, semantic-release
 ```
 
-## Security Model
+161 files total.
 
-- Loopback-only HTTP (127.0.0.1:8745)
+## Setup
+
+Requires Rust, Node.js 20+ (Bun or pnpm), Elixir 1.16+, Erlang/OTP 26+.
+
+```bash
+# Frontend
+cd app && bun install
+
+# Backend
+cd agent_service && mix deps.get
+
+# Development
+cd app && bun run tauri dev       # starts both Tauri shell and Vite dev server
+cd agent_service && mix phx.server # agent service on port 8745
+```
+
+## Security model
+
+- HTTP server binds to 127.0.0.1 only
 - Per-session random bearer tokens
-- Secrets stored in OS Keychain, never on disk
-- Strict Tauri shell allowlist
-- No background networking unless explicitly enabled
-- Template sandboxing with network allowlists
+- Secrets in OS keychain, not on disk
+- Tauri shell allowlist restricts subprocess execution
+
+## Limitations
+
+- No test suite. The single `test.exs` is a config file, not a test module.
+- No packaged binaries or installers. Must build from source.
+- The JIDO framework dependency (`jido ~> 1.2.0`) is not on hex.pm; requires access to the agentjido GitHub org.
+- `jido_ai` dependency is pinned to a GitHub repo with no version constraint.
+- Claude Code CLI is assumed available for agent execution but is not bundled or documented for installation.
+- Conventional commits are enforced (commitlint + husky) but semantic-release has not produced any releases.
+
+## License
+
+MIT
