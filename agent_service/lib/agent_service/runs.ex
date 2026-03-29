@@ -6,14 +6,17 @@ defmodule AgentService.Runs do
   alias AgentService.Runs.{Supervisor, Store}
   require Logger
 
+  @spec list_runs() :: list(map())
   def list_runs do
     Store.list_runs()
   end
 
+  @spec get_run(String.t()) :: map() | nil
   def get_run(id) do
     Store.get_run(id)
   end
 
+  @spec create_run(map()) :: {:ok, map()} | {:error, String.t()}
   def create_run(params) do
     with {:ok, validated} <- validate_run_params(params),
          {:ok, run} <- Store.create_run(validated),
@@ -22,6 +25,7 @@ defmodule AgentService.Runs do
     end
   end
 
+  @spec stop_run(String.t()) :: :ok | {:error, term()}
   def stop_run(id) do
     case Supervisor.stop_run(id) do
       :ok ->

@@ -5,6 +5,7 @@ defmodule AgentService.Templates.Registry do
 
   @templates_dir Path.expand("~/.jido/templates")
 
+  @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
@@ -15,14 +16,17 @@ defmodule AgentService.Templates.Registry do
     {:ok, %{templates: templates}}
   end
 
+  @spec list_templates() :: list(Template.t())
   def list_templates do
     GenServer.call(__MODULE__, :list_templates)
   end
 
+  @spec get_template(String.t()) :: Template.t() | nil
   def get_template(id) do
     GenServer.call(__MODULE__, {:get_template, id})
   end
 
+  @spec install_template(map()) :: {:ok, Template.t()} | {:error, String.t()}
   def install_template(upload) do
     GenServer.call(__MODULE__, {:install_template, upload})
   end
@@ -96,7 +100,7 @@ defmodule AgentService.Templates.Registry do
       # Extract zip file
       File.mkdir_p!(target_dir)
 
-      case System.cmd("unzip", ["-q", temp_path, "-d", target_dir]) do
+      case System.cmd("unzip", ["-q", temp_path, "-d", target_dir], stderr_to_stdout: true) do
         {_, 0} ->
           # Load the template manifest
           manifest_path = Path.join(target_dir, "jido-template.yaml")
@@ -116,14 +120,27 @@ defmodule AgentService.Templates.Registry do
             {:error, "Template manifest not found"}
           end
 
-        {error, _} ->
+        {error_output, exit_code} ->
           File.rm_rf!(target_dir)
-          {:error, "Failed to extract template: #{error}"}
+          Logger.error("Failed to extract template. Exit code: #{exit_code}, Output: #{error_output}")
+          {:error, "Failed to extract template (exit code #{exit_code}): #{String.slice(error_output, 0..200)}"}
       end
     rescue
+      error in ErlangError ->
+        # Handle case where unzip command doesn't exist
+        File.rm_rf!(target_dir)
+        Logger.error("unzip command not found or failed to execute: #{inspect(error)}")
+        {:error, "unzip command not available. Please ensure it is installed on your system."}
+
+      error in File.Error ->
+        File.rm_rf!(target_dir)
+        Logger.error("File system error during template installation: #{inspect(error)}")
+        {:error, "File system error: #{Exception.message(error)}"}
+
       e ->
         File.rm_rf!(target_dir)
-        {:error, "Installation failed: #{inspect(e)}"}
+        Logger.error("Unexpected error during template installation: #{inspect(e)}")
+        {:error, "Installation failed: #{Exception.message(e)}"}
     end
   end
 

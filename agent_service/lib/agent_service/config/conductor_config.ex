@@ -28,6 +28,7 @@ defmodule AgentService.Config.ConductorConfig do
   Load and parse a conductor.json file from the given path.
   Returns {:ok, config} or {:error, reason}
   """
+  @spec load(String.t()) :: {:ok, map()} | {:error, String.t()}
   def load(path) do
     with {:ok, content} <- File.read(path),
          {:ok, json} <- Jason.decode(content),
@@ -46,6 +47,7 @@ defmodule AgentService.Config.ConductorConfig do
   Load conductor.json from a template directory.
   Looks for conductor.json in the root of the template directory.
   """
+  @spec load_from_template(String.t()) :: {:ok, map()} | {:error, String.t()}
   def load_from_template(template_path) do
     conductor_path = Path.join(template_path, "conductor.json")
 
@@ -60,6 +62,7 @@ defmodule AgentService.Config.ConductorConfig do
   @doc """
   Validate a conductor configuration map.
   """
+  @spec validate_config(map()) :: {:ok, map()} | {:error, String.t()}
   def validate_config(config) when is_map(config) do
     with :ok <- validate_scripts(config),
          :ok <- validate_env(config),
@@ -74,6 +77,7 @@ defmodule AgentService.Config.ConductorConfig do
   @doc """
   Get environment variables from config, merging with system env.
   """
+  @spec get_env(map(), map()) :: map()
   def get_env(config, additional_env \\ %{}) do
     config_env = Map.get(config, "env", %{})
 
@@ -86,6 +90,7 @@ defmodule AgentService.Config.ConductorConfig do
   @doc """
   Get script path relative to template directory.
   """
+  @spec get_script_path(map(), :setup | :run | :archive, String.t()) :: String.t() | nil
   def get_script_path(config, script_type, template_dir) when script_type in [:setup, :run, :archive] do
     script_name = Map.get(config, to_string(script_type))
 
@@ -99,6 +104,7 @@ defmodule AgentService.Config.ConductorConfig do
   @doc """
   Check if parallel execution is enabled.
   """
+  @spec parallel_enabled?(map()) :: boolean()
   def parallel_enabled?(config) do
     Map.get(config, "parallel", false) == true
   end
@@ -106,6 +112,7 @@ defmodule AgentService.Config.ConductorConfig do
   @doc """
   Get timeout in seconds (default 1 hour).
   """
+  @spec get_timeout(map()) :: integer()
   def get_timeout(config) do
     Map.get(config, "timeout", 3600)
   end
@@ -113,6 +120,7 @@ defmodule AgentService.Config.ConductorConfig do
   @doc """
   Get budget constraints.
   """
+  @spec get_budget(map()) :: %{max_usd: number() | nil, max_tokens: integer() | nil}
   def get_budget(config) do
     budget = Map.get(config, "budget", %{})
 
